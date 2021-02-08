@@ -1,3 +1,214 @@
 # CTE
 SQL Project
+Purpose is to look at various data variables in the Rockbuster database. This includes looking at avg rental rates, durations, top countries and cities. 
+
+Checking for and cleaning dirty data. Didn't find duplicate data, but if I did I would clean the data as follows: I would create a view with unique records. I would be shy about deleting data at this point.
+SELECT title,
+       release_year,
+       language_id,
+       rental_duration,
+       COUNT(*)
+FROM film
+GROUP BY title,
+         release_year,
+         language_id,
+         rental_duration
+HAVING COUNT(*) >1; --no result set means we have no duplicates
+
+SELECT customer_id,
+       store_id,
+       first_name,
+       last_name,
+	   email,
+	   address_id,
+       COUNT(*)
+FROM customer
+GROUP BY customer_id,
+       store_id,
+       first_name,
+       last_name,
+	   email,
+	   address_id
+HAVING COUNT(*) >1; --no result set means we have no duplicates
+SELECT 
+
+Missing Values – there weren’t any based on the categories below. To add the missing values, I would use the AVG value.
+SELECT * FROM film
+WHERE rental_rate  IS NULL
+
+SELECT * FROM film
+WHERE film_id IS NULL
+
+SELECT * FROM customer
+WHERE email IS NULL
+
+SELECT * FROM customer
+WHERE customer_id IS NULL
+
+Non-Uniform data – no data found based on the queries below. But if there were, I would use UPDATE table, SET column = ‘value’, WHERE column IN (‘values’)
+SELECT store_id
+FROM customer
+GROUP BY store_id
+
+SELECT DISTINCT email
+FROM customer
+GROUP BY email
+
+SELECT title
+FROM film
+GROUP BY title
+
+SELECT DISTINCT film_id
+FROM film
+GROUP by film_id
+
+
+Summarizing Data
+SELECT MIN(rental_rate) AS min_rent,
+      MAX(rental_rate) AS max_rent,
+      AVG(rental_rate) AS avg_rent,
+      COUNT(rental_rate) AS count_rent_values,
+      COUNT(*)(*)AS count_rows
+FROM film;
+
+NOTE: double asterisks used to negate italics.
+
+SELECT MIN(rental_duration) AS min_dur,
+      MAX(rental_duration) AS max_dur,
+      AVG(rental_duration) AS avg_dur,
+      COUNT(rental_duration) AS count_rent_dur_values,
+      COUNT(*)(*)AS count_rows
+FROM film;
+NOTE: double asterisks used to negate italics.
+
+SELECT mode()
+WITHIN GROUP (ORDER BY activebool)
+FROM customer;
+
+SELECT mode()
+WITHING GROUP(ORDER BY store_id)
+FROM customer;
+
+
+Top 10 Countries for Rockbuster
+SELECT country, COUNT (customer_id) 
+FROM country
+JOIN city
+ON country.country_id = city.country_id
+JOIN address
+ON city.city_id = address.city_id
+JOIN customer
+ON customer.address_id = address.address_id
+GROUP BY country
+ORDER BY COUNT (customer_id) DESC
+LIMIT 10
+
+Top 10 cities within the top 10 countries
+SELECT country.country AS “Country”, city.city AS “City”, COUNT (customer.customer_id) as "No_Customer"  
+FROM country
+JOIN city
+ON country.country_id = city.country_id
+JOIN address
+ON city.city_id = address.city_id
+JOIN customer
+ON customer.address_id = address.address_id
+WHERE country.country in ('India', 'China', 'United States', 'Japan', 'Brazil', 'RussianFederation', 'Philippines', 'Turkey', 'Indonesia')
+GROUP BY country.country, city.city
+ORDER BY "No_Customer" DESC
+LIMIT 10
+
+Top 5 customers in the top 10 cities who paide the highest amounts to Rockbuster
+select payment.customer_id as "Customer_ID", customer.first_name as "First_Name", customer.last_name as "Last_Name", Country.country as "Country", city.city as "City", 
+sum (payment.amount) as "Total Amount Paid" from country
+join city
+on country.country_id = city.country_id
+join address
+on city.city_id = address.city_id
+join customer
+on customer.address_id = address.address_id
+join payment
+on payment.customer_id = customer.customer_id
+where city.city in ('Saint-Denis', 'Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+group by city.city, payment.customer_id, customer.first_name, customer.last_name, Country.country, payment.amount
+order by "Total Amount Paid" DESC
+limit 10
+
+
+Average amount paid by the top 5 customers
+SELECT B.first_name, AVG (A.amount) AS "Average Amount Paid" FROM payment A
+INNER JOIN customer B ON A.customer_id = B.customer_id INNER JOIN address C ON B.address_id = C.address_id
+INNER JOIN city D ON C.city_id = D.city_id
+INNER JOIN country E ON D.country_ID = E.country_ID RIGHT JOIN
+(SELECT A.customer_id, B.first_name, B.last_name, E.country, D.city, SUM (A.amount) as total_amount_paid
+FROM payment A
+INNER JOIN customer B ON A.customer_id = B.customer_id
+INNER JOIN address C ON B.address_id = C.address_id
+INNER JOIN city D ON C.city_id = D.city_id
+INNER JOIN country E ON D.country_ID = E.country_ID
+WHERE D.city IN ('Saint-Denis','Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+GROUP BY A.customer_id, B.first_name, B.last_name, E.country, D.city, A.amount ORDER BY total_amount_paid DESC
+LIMIT 5) AS Z
+ON B.customer_id = Z.customer_id GROUP BY B.first_name
+ORDER BY "Average Amount Paid" LIMIT 5
+
+How many of the top 5 customers are based within each country
+SELECT E.country, COUNT (DISTINCT B.customer_id) as "avg_customer", COUNT (DISTINCT Z.customer_id) as "avg_top5_customer"
+FROM payment A
+INNER JOIN customer B ON A.customer_id = B.customer_id INNER JOIN address C ON B.address_id = C.address_id INNER JOIN city D ON C.city_id = D.city_id
+INNER JOIN country E ON D.country_ID = E.country_ID
+LEFT JOIN
+(SELECT A.customer_id, B.first_name, B.last_name, E.country, D.city,
+SUM (A.amount) as total_amount_paid FROM payment A
+INNER JOIN customer B ON A.customer_id = B.customer_id
+INNER JOIN address C ON B.address_id = C.address_id
+INNER JOIN city D ON C.city_id = D.city_id
+INNER JOIN country E ON D.country_ID = E.country_ID
+WHERE D.city IN ('Saint-Denis','Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+GROUP BY A.customer_id, B.first_name, B.last_name, E.country, D.city, A.amount ORDER BY total_amount_paid DESC
+LIMIT 5) AS Z
+ON E.country = Z.country
+GROUP BY E.country
+ORDER BY "avg_customer" DESC, "avg_top5_customer" DESC LIMIT 10
+
+
+CTE's for the 2 above queries
+WITH average_cte AS
+(SELECT A.customer_id,
+A.first_name,
+A.last_name,
+country,
+city,
+SUM (amount) as total_amount_paid
+FROM customer A
+INNER JOIN address B ON A.address_id = B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_ID = D.country_ID
+INNER JOIN payment E ON E.customer_id = A.customer_id
+WHERE city IN ('Saint-Denis','Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+GROUP BY A.customer_id,A.first_name, A.last_name,country,city
+ORDER BY SUM (amount) DESC
+LIMIT 5)
+SELECT ROUND (AVG (total_amount_paid), 2) AS average_amount_paid FROM average_cte;
+
+WITH customers_country_cte AS 
+(SELECT A.customer_id,
+A.first_name,
+A.last_name,
+country,
+city,
+SUM (amount) as total_amount_paid
+FROM customer A
+INNER JOIN address B ON A.address_id = B.address_id INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_ID = D.country_ID INNER JOIN payment E ON E.customer_id = A.customer_id
+WHERE city IN ('Saint-Denis','Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+GROUP BY A.customer_id,A.first_name, A.last_name,country,city
+ORDER BY SUM(amount) DESC
+LIMIT 5)
+SELECT D.country,
+COUNT (DISTINCT A.customer_id) AS all_customer_count,
+COUNT (DISTINCT customers_country_cte.customer_id) AS top_customer_count
+FROM customer A
+INNER JOIN address B ON A.address_id = B.address_id INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id LEFT JOIN customers_country_cte ON D.country =
+customers_country_cte.country GROUP BY D.country;
 
