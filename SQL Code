@@ -73,25 +73,29 @@ SELECT MIN(rental_duration) AS min_dur,
       COUNT(*) AS count_rows
 FROM film;
 
-SELECT mode()
+SELECT mode ()
 WITHIN GROUP (ORDER BY activebool)
 FROM customer;
 
-SELECT mode()
-WITHIN GROUP (ORDER BY store_id)
-FROM Customer;
+SELECT MIN (store_id) AS min_store,
+COUNT (store_id) AS count_rows
+FROM customer
+
+SELECT mode ()
+WITHIN GROUP (ORDER BY rating)
+FROM film
 
 #Top 10 countries for Rockbuster in terms of customer numbers
-SELECT country, COUNT (customer_id) 
-FROM country
-JOIN city
-ON country.country_id = city.country_id
-JOIN address
-ON city.city_id = address.city_id
-JOIN customer
-ON customer.address_id = address.address_id
-GROUP BY country
-ORDER BY COUNT (customer_id) DESC
+SELECT country, COUNT (customer_id) 	
+FROM country	
+JOIN city	
+ON country.country_id = city.country_id	
+JOIN address	
+ON city.city_id = address.city_id	
+JOIN customer	
+ON customer.address_id = address.address_id	
+GROUP BY country	
+ORDER BY COUNT (customer_id) DESC	
 LIMIT 10
 
 #Top 10 cities within the top 10 countries 
@@ -119,10 +123,10 @@ join customer
 on customer.address_id = address.address_id
 join payment
 on payment.customer_id = customer.customer_id
-where city.city in ('Saint-Denis', 'Cape Coral', 'Santa Brbara dOeste', 'Apeldoorn', 'Molodetno', 'Qomsheh', 'London', 'Memphis', 'Richmond Hill', 'Tanza')
+where city.city in ('Aurora', 'So Leopoldo', 'Tianjin', 'Ambattur',  'Shanwei', 'Citrus Heights', 'Iwaki', 'Hami', 'Kanchrapara', 'Cianjur')
 group by city.city, payment.customer_id, customer.first_name, customer.last_name, Country.country, payment.amount
 order by "Total Amount Paid" DESC
-limit 10
+limit 5
 
 
 #Average amount paid by the top 5 customers
